@@ -4,19 +4,19 @@ pipeline {
     environment{
         DOCKER_TAG = getDockerTag()
         GIT_URL = "https://github.com/mahmud255/springboot-demo.git', branch: 'master'"
-        IMAGE_URL_WITH_TAG = '${GIT_URL}/springboot:${DOCKER_TAG}'
+        IMAGE_URL_WITH_TAG = "${GIT_URL}/springboot:${DOCKER_TAG}"
     }
     
     stages{
-        stage('Build Docker Image'){
+        stage('Build Docker'){
             steps{
-                sh "docker build . -t ${IMAGE_URL_WITH_TAG}"
+                sh "docker build -t ${IMAGE_URL_WITH_TAG} ."
             }
         }
         stage('Docker Push'){
             steps{
                 withCredentials([string(credentialsId: 'docker_key', variable: 'PASSWORD')]) {
-                    sh 'docker login -u mahmud255 -p $PASSWORD'
+                    sh "docker login -u mahmud255 -p $PASSWORD"
                     sh "docker push ${IMAGE_URL_WITH_TAG}"
                 }
             }
