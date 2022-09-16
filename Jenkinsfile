@@ -36,17 +36,9 @@ currentBuild.displayName = "Spring-#"+currentBuild.number
                         sh 'docker push mahmud255/spring:latest'
                         
                     }
-					// Remove existing container, if container name does not exists still proceed with the build
-					sh script: "ssh root@192.168.0.200 docker rm -f springboot",  returnStatus: true
-                    
-                    sh "ssh root@192.168.0.200 docker run -d -p 8080:8080 --name springboot ${IMAGE_URL_WITH_TAG}"
+				
                 }
             }
         }
     }
 
-
-def getDockerTag(){
-    def tag  = sh script: 'git rev-parse HEAD', returnStdout: true
-    return tag
-}
