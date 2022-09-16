@@ -29,17 +29,19 @@ pipeline {
             }
         }
         
-        stage('Docker Deploy'){
+        stage('Deploy'){
             steps{
                 sshagent(['ssh-key']) {
-                    withCredentials([string(credentialsId: 'ssh-key', variable: 'PASSWORD')]) {
-                        sh 'docker login -u mahmud255 -p $PASSWORD'
-                        sh 'docker push mahmud255/spring:latest'
-                        
+                sh "scp -o StrictHostKeyChecking=no k8s-spring-boot-deployment.yml root@192.168.0.200:/root/deploy/"
+                script{
+                    try{
+                        sh "ssh root@192.168.0.200 kubectl apply -f ."
+                }catch(error){
+                        sh "ssh root@192.168.0.200 kubectl create -f ."
                     }
                 }
             }
         }
+        }
     }
 }
-
