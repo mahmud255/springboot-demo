@@ -3,8 +3,8 @@ pipeline {
     agent any
     environment{
         DOCKER_TAG = getDockerTag()
-        GIT_URL = "https://github.com/mahmud255/springboot-demo.git', branch: 'master'"
-        IMAGE_URL_WITH_TAG = "${GIT_URL}/springboot:${DOCKER_TAG}"
+        NEXUS_URL = "https://github.com/mahmud255/springboot-demo.git"
+        IMAGE_URL_WITH_TAG = "${NEXUS_URL}/springboot:${DOCKER_TAG}"
     }
     
     stages{
@@ -16,7 +16,7 @@ pipeline {
         stage('Docker Push'){
             steps{
                 withCredentials([string(credentialsId: 'docker_key', variable: 'PASSWORD')]) {
-                    sh "docker login -u mahmud255 -p $PASSWORD"
+                    sh "docker login -u mahmud255 -p ${PASSWORD} ${NEXUS_URL}"
                     sh "docker push ${IMAGE_URL_WITH_TAG}"
                 }
             }
@@ -25,7 +25,7 @@ pipeline {
             steps{
                 sshagent(['ssh-key']) {
                     withCredentials([string(credentialsId: 'ssh-key', variable: 'PASSWORD')]) {
-                        sh "ssh root@192.168.0.200 docker login -u admin -p ${PASSWORD} ${GIT_URL}"
+                        sh "ssh root@192.168.0.200 docker login -u mahmud255 -p ${PASSWORD} ${NEXUS_URL}"
                     }
 					// Remove existing container, if container name does not exists still proceed with the build
 					sh script: "ssh root@192.168.0.200 docker rm -f springboot",  returnStatus: true
