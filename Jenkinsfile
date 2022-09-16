@@ -32,7 +32,7 @@ pipeline {
         stage('Deploy'){
             steps{
                 sshagent(['kuber2']) {
-                sh "scp -o StrictHostKeyChecking=no k8s-spring-boot-deployment.yml ubuntu@192.168.0.200:/home/ubuntu/"
+                sh "scp -v k8s-spring-boot-deployment.yml ubuntu@192.168.0.200:/home/ubuntu/"
                 script{
                     try{
                         sh "ssh ubuntu@192.168.0.200 kubectl apply -f ."
