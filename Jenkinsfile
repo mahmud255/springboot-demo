@@ -31,13 +31,13 @@ pipeline {
         
         stage('Deploy'){
             steps{
-                sshagent(['ssh-key']) {
-                sh "scp -o StrictHostKeyChecking=no k8s-spring-boot-deployment.yml root@192.168.0.200:/root/deploy/"
+                sshagent(['kuber2']) {
+                sh "scp -o StrictHostKeyChecking=no k8s-spring-boot-deployment.yml ubuntu@192.168.0.200:/home/ubuntu/"
                 script{
                     try{
-                        sh "ssh root@192.168.0.200 kubectl apply -f ."
+                        sh "ssh ubuntu@192.168.0.200 kubectl apply -f ."
                 }catch(error){
-                        sh "ssh root@192.168.0.200 kubectl create -f ."
+                        sh "ssh ubuntu@192.168.0.200 kubectl create -f ."
                     }
                 }
             }
