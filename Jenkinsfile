@@ -1,4 +1,5 @@
 currentBuild.displayName = "Spring-#"+currentBuild.number
+pipeline {
     agent any
     stages {
         stage('Build') {
@@ -36,9 +37,9 @@ currentBuild.displayName = "Spring-#"+currentBuild.number
                         sh 'docker push mahmud255/spring:latest'
                         
                     }
-				
                 }
             }
         }
     }
+}
 
