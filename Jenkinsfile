@@ -1,73 +1,43 @@
-currentBuild.displayName = "Spring Boot Application-#"+currentBuild.number
-
+currentBuild.displayName = "Spring-#"+currentBuild.number
 pipeline {
     agent any
-    stages {
-        stage('Build') {
-            steps {
-                // Get some code from a GitHub repository
-                git url: 'https://github.com/mahmud255/springboot-demo.git', branch: 'master'
-                // Change file permisson
-                sh "chmod +x -R . "
-                // Run shell script
-                sh './gradlew build'
+    environment{
+        DOCKER_TAG = getDockerTag()
+        GIT_URL = "https://github.com/mahmud255/springboot-demo.git', branch: 'master'"
+        IMAGE_URL_WITH_TAG = '${GIT_URL}/springboot:${DOCKER_TAG}'
+    }
+    
+    stages{
+        stage('Build Docker Image'){
+            steps{
+                sh "docker build . -t ${IMAGE_URL_WITH_TAG}"
             }
         }
-        stage('Docker build') {
-            steps {
-                sh 'docker version'
-				sh 'docker build -t k8-integration .'
-				sh 'docker image list'
-				sh 'docker tag k8-integration mahmud255/k8-integration:latest'
-            }
-        }
-        stage ('Docker Login') {
+        stage('Docker Push'){
             steps{
                 withCredentials([string(credentialsId: 'docker_key', variable: 'PASSWORD')]) {
-				sh 'docker login -u mahmud255 -p $PASSWORD'
+                    sh 'docker login -u mahmud255 -p $PASSWORD'
+                    sh "docker push ${IMAGE_URL_WITH_TAG}"
                 }
             }
         }
-        stage ('Push Image') {
+        stage('Docker Deploy'){
             steps{
-                sh 'docker push mahmud255/k8-integration:latest'
-            }
-        }
-        
-        stage("SSH Into k8s Server") {
-            steps{
-                script {
-                    def remote = [:]
-                    remote.name = 'K8S master'
-                    remote.host = '192.168.0.200'
-                    remote.user = 'root'
-                    remote.password = 'root123'
-                    remote.allowAnyHosts = true
-                }  
-                echo 'Login Succeeded'
-            } 
-        }     
-       
-        stage('Put deploymentFile onto Cluster') {
-            steps{
-                script {
-                   { context ->
-                        sshPut remote: remote, from: 'k8s-spring-boot-deployment.yml', into: '.'
-                   }
-                }
-            }
-        }
-        stage('Deploy') {
-            steps{
-                script {
-                    { context ->
-                        sshCommand remote: remote, command: "kubectl apply -f k8s-spring-boot-deployment.yml"
+                sshagent(['ssh-key']) {
+                    withCredentials([string(credentialsId: 'ssh-key', variable: 'PASSWORD')]) {
+                        sh "ssh root@192.168.0.200 docker login -u admin -p ${PASSWORD} ${GIT_URL}"
                     }
+					// Remove existing container, if container name does not exists still proceed with the build
+					sh script: "ssh root@192.168.0.200 docker rm -f springboot",  returnStatus: true
+                    
+                    sh "ssh root@192.168.0.200 docker run -d -p 8080:8080 --name springboot ${IMAGE_URL_WITH_TAG}"
                 }
             }
         }
-       
-       
-        
     }
+}
+
+def getDockerTag(){
+    def tag  = sh script: 'git rev-parse HEAD', returnStdout: true
+    return tag
 }
